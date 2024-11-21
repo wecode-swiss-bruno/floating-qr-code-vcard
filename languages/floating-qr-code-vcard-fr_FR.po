@@ -1,0 +1,64 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: My VCard Plugin\n"
+"POT-Creation-Date: 2024-03-20 12:00+0000\n"
+"PO-Revision-Date: 2024-11-21 23:44+0100\n"
+"Last-Translator: \n"
+"Language-Team: French\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Poedit 3.5\n"
+
+msgid "VCard Settings"
+msgstr "Paramètres de la vCard"
+
+msgid "VCard"
+msgstr "vCard"
+
+msgid "Settings saved."
+msgstr "Paramètres sauvegardés."
+
+msgid "Company"
+msgstr "Société"
+
+msgid "First Name"
+msgstr "Prénom."
+
+msgid "Last Name"
+msgstr "Nom"
+
+msgid "Email"
+msgstr "Courriel"
+
+msgid "Phone"
+msgstr "Téléphone"
+
+msgid "Mobile"
+msgstr "Mobile"
+
+msgid "Address"
+msgstr "Adresse"
+
+msgid "Website"
+msgstr "Site internet (URL)"
+
+msgid "Button Position"
+msgstr "Position"
+
+msgid "Bottom Left"
+msgstr "En bas a gauche"
+
+msgid "Bottom Center"
+msgstr "En bas au centre"
+
+msgid "Bottom Right"
+msgstr "En bas à droite"
+
+msgid "Save Changes"
+msgstr "Sauvegarder"
+
+msgid "Download VCard"
+msgstr "Télécharger la vCard"

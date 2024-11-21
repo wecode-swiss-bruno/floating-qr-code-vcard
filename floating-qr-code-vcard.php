@@ -1,50 +1,83 @@
 <?php
 /*
-Plugin Name: My VCard Plugin
-Description: Génère une carte .vcf et un QR code flottant avec les informations de contact.
+Plugin Name: Floating QR Code vCard
+Description: Transform your website into a digital business card hub with an elegant floating QR code that allows instant contact sharing.
 Version: 1.0
-Author: Votre Nom
+Author: WecodeGeneva
+License: GPL v2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
 */
 
 add_action('admin_menu', 'my_vcard_plugin_menu');
 
-function my_vcard_plugin_menu() {
+function my_vcard_plugin_menu()
+{
     add_menu_page(
-        'Paramètres VCard',
-        'VCard',
+        __('VCard Settings', 'floating-qr-code-vcard'),
+        __('VCard', 'floating-qr-code-vcard'),
         'manage_options',
-        'my-vcard-plugin',
+        'floating-qr-code-vcard',
         'my_vcard_plugin_settings_page',
         'dashicons-id', // Icône du menu
         100 // Position du menu
     );
 }
 
-function my_vcard_plugin_settings_page() {
+function my_vcard_plugin_settings_page()
+{
     // Vérifier les permissions
     if (!current_user_can('manage_options')) {
         return;
     }
 
-    // Sauvegarder les données si le formulaire est soumis
+    // Add nonce field and verification
     if (isset($_POST['my_vcard_plugin_hidden_field']) && $_POST['my_vcard_plugin_hidden_field'] == 'Y') {
+        // Verify nonce
+        if (!isset($_POST['my_vcard_plugin_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['my_vcard_plugin_nonce'])), 'my_vcard_plugin_settings')) {
+            wp_die(esc_html__('Security check failed', 'floating-qr-code-vcard'));
+        }
+
         // Récupérer et nettoyer les données du formulaire
         $fields = [
-            'company', 'last_name', 'first_name', 'mobile_phone', 'landline_phone',
-            'website', 'email', 'address', 'postal_code', 'city', 'job_title', 'button_position', 'qr_text'
+            'company',
+            'last_name',
+            'first_name',
+            'mobile_phone',
+            'landline_phone',
+            'website',
+            'email',
+            'address',
+            'postal_code',
+            'city',
+            'job_title',
+            'button_position',
+            'qr_text'
         ];
 
         foreach ($fields as $field) {
-            update_option('my_vcard_plugin_' . $field, sanitize_text_field($_POST[$field]));
+            if (isset($_POST[$field])) {
+                update_option('my_vcard_plugin_' . $field, sanitize_text_field(wp_unslash($_POST[$field])));
+            }
         }
 
-        echo '<div class="updated"><p><strong>Paramètres enregistrés.</strong></p></div>';
+        echo '<div class="updated"><p><strong>' . esc_html__('Settings saved.', 'floating-qr-code-vcard') . '</strong></p></div>';
     }
 
     // Récupérer les valeurs enregistrées
     $fields = [
-        'company', 'last_name', 'first_name', 'mobile_phone', 'landline_phone',
-        'website', 'email', 'address', 'postal_code', 'city', 'job_title', 'button_position', 'qr_text'
+        'company',
+        'last_name',
+        'first_name',
+        'mobile_phone',
+        'landline_phone',
+        'website',
+        'email',
+        'address',
+        'postal_code',
+        'city',
+        'job_title',
+        'button_position',
+        'qr_text'
     ];
     $values = [];
     foreach ($fields as $field) {
@@ -52,14 +85,15 @@ function my_vcard_plugin_settings_page() {
     }
 
     // Afficher le formulaire
-    ?>
+?>
     <div class="wrap">
-        <h1>Paramètres VCard</h1>
+        <h1><?php esc_html_e('VCard Settings', 'floating-qr-code-vcard'); ?></h1>
         <form method="post" action="">
+            <?php wp_nonce_field('my_vcard_plugin_settings', 'my_vcard_plugin_nonce'); ?>
             <input type="hidden" name="my_vcard_plugin_hidden_field" value="Y">
             <table class="form-table">
                 <tr>
-                    <th scope="row">Entreprise</th>
+                    <th scope="row"><?php _e('Company', 'floating-qr-code-vcard'); ?></th>
                     <td><input type="text" name="company" value="<?php echo esc_attr($values['company']); ?>" class="regular-text"></td>
                 </tr>
                 <tr>
@@ -103,12 +137,12 @@ function my_vcard_plugin_settings_page() {
                     <td><input type="text" name="job_title" value="<?php echo esc_attr($values['job_title']); ?>" class="regular-text"></td>
                 </tr>
                 <tr>
-                    <th scope="row">Position du bouton</th>
+                    <th scope="row"><?php _e('Button Position', 'floating-qr-code-vcard'); ?></th>
                     <td>
                         <select name="button_position">
-                            <option value="bottom-left" <?php selected($values['button_position'], 'bottom-left'); ?>>Bas gauche</option>
-                            <option value="bottom-center" <?php selected($values['button_position'], 'bottom-center'); ?>>Bas centre</option>
-                            <option value="bottom-right" <?php selected($values['button_position'], 'bottom-right'); ?>>Bas droite</option>
+                            <option value="bottom-left" <?php selected($values['button_position'], 'bottom-left'); ?>><?php _e('Bottom Left', 'floating-qr-code-vcard'); ?></option>
+                            <option value="bottom-center" <?php selected($values['button_position'], 'bottom-center'); ?>><?php _e('Bottom Center', 'floating-qr-code-vcard'); ?></option>
+                            <option value="bottom-right" <?php selected($values['button_position'], 'bottom-right'); ?>><?php _e('Bottom Right', 'floating-qr-code-vcard'); ?></option>
                         </select>
                     </td>
                 </tr>
@@ -122,13 +156,23 @@ function my_vcard_plugin_settings_page() {
             <?php submit_button('Enregistrer les paramètres'); ?>
         </form>
     </div>
-    <?php
+<?php
 }
 
-function my_vcard_plugin_generate_vcf() {
+function my_vcard_plugin_generate_vcf()
+{
     $fields = [
-        'company', 'last_name', 'first_name', 'mobile_phone', 'landline_phone',
-        'website', 'email', 'address', 'postal_code', 'city', 'job_title'
+        'company',
+        'last_name',
+        'first_name',
+        'mobile_phone',
+        'landline_phone',
+        'website',
+        'email',
+        'address',
+        'postal_code',
+        'city',
+        'job_title'
     ];
 
     $values = [];
@@ -165,7 +209,8 @@ function my_vcard_plugin_generate_vcf() {
 
 add_action('init', 'my_vcard_plugin_add_endpoint');
 
-function my_vcard_plugin_add_endpoint() {
+function my_vcard_plugin_add_endpoint()
+{
     add_rewrite_rule('^vcard/download/?$', 'index.php?my_vcard_plugin_action=download_vcf', 'top');
     // Flush rewrite rules only once when needed
     if (get_option('my_vcard_plugin_flush_rewrite') != true) {
@@ -176,14 +221,16 @@ function my_vcard_plugin_add_endpoint() {
 
 add_filter('query_vars', 'my_vcard_plugin_query_vars');
 
-function my_vcard_plugin_query_vars($vars) {
+function my_vcard_plugin_query_vars($vars)
+{
     $vars[] = 'my_vcard_plugin_action';
     return $vars;
 }
 
 add_action('parse_request', 'my_vcard_plugin_parse_request');
 
-function my_vcard_plugin_parse_request($wp) {
+function my_vcard_plugin_parse_request($wp)
+{
     if (array_key_exists('my_vcard_plugin_action', $wp->query_vars) && $wp->query_vars['my_vcard_plugin_action'] == 'download_vcf') {
         header('Content-Type: text/vcard; charset=utf-8');
         header('Content-Disposition: attachment; filename="contact.vcf"');
@@ -192,7 +239,8 @@ function my_vcard_plugin_parse_request($wp) {
     }
 }
 
-function my_vcard_plugin_get_qr_code_url() {
+function my_vcard_plugin_get_qr_code_url()
+{
     // Use the new endpoint URL
     $vcf_url = home_url('/vcard/download/');
     $vcf_url = rawurlencode($vcf_url);
@@ -201,7 +249,8 @@ function my_vcard_plugin_get_qr_code_url() {
 
 add_action('wp_footer', 'my_vcard_plugin_display_button');
 
-function my_vcard_plugin_display_button() {
+function my_vcard_plugin_display_button()
+{
     $position = get_option('my_vcard_plugin_button_position', 'bottom-right');
     $qr_text = get_option('my_vcard_plugin_qr_text', 'Scannez pour enregistrer le contact');
 
@@ -212,100 +261,112 @@ function my_vcard_plugin_display_button() {
     ];
     $css_position = isset($positions_css[$position]) ? $positions_css[$position] : $positions_css['bottom-right'];
     $qr_code_url = my_vcard_plugin_get_qr_code_url();
-    ?>
+?>
     <style>
-    #my-vcard-plugin-button {
-        position: fixed;
-        <?php echo $css_position; ?>
-        z-index: 9999;
-        cursor: pointer;
-        background-color: #0073aa;
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        transition: all 0.3s ease;
-    }
-    #my-vcard-plugin-button:hover {
-        transform: scale(1.05);
-        box-shadow: 0 3px 8px rgba(0,0,0,0.3);
-    }
-    #my-vcard-plugin-button .dashicons {
-        font-size: 30px;
-        width: 30px;
-        height: 30px;
-        padding: 0;
-        color: #fff;
-    }
-    #my-vcard-plugin-qr {
-        display: none;
-        position: fixed;
-        <?php echo $css_position; ?>
-        z-index: 9998;
-        margin-bottom: 70px;
-        background: white;
-        padding: 15px;
-        border-radius: 8px;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-        text-align: center;
-    }
-    #my-vcard-plugin-qr img {
-        width: 200px;
-        height: 200px;
-        margin-bottom: 10px;
-    }
-    #my-vcard-plugin-qr p {
-        margin: 0;
-        color: #333;
-        font-size: 14px;
-        font-weight: 500;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
-    }
-    @media (max-width: 767px) {
-        #my-vcard-plugin-qr {
-            left: 50% !important;
-            transform: translateX(-50%);
-            bottom: 90px;
-            right: auto;
+        #floating-qr-code-vcard-button {
+            position: fixed;
+            <?php echo esc_attr($css_position); ?>z-index: 9999;
+            cursor: pointer;
+            background-color: #0073aa;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
         }
-    }
+
+        #floating-qr-code-vcard-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        #floating-qr-code-vcard-button .dashicons {
+            font-size: 30px;
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            color: #fff;
+        }
+
+        #floating-qr-code-vcard-qr {
+            display: none;
+            position: fixed;
+            <?php echo esc_attr($css_position); ?>z-index: 9998;
+            margin-bottom: 70px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        #floating-qr-code-vcard-qr img {
+            width: 200px;
+            height: 200px;
+            margin-bottom: 10px;
+        }
+
+        #floating-qr-code-vcard-qr p {
+            margin: 0;
+            color: #333;
+            font-size: 14px;
+            font-weight: 500;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+        }
+
+        @media (max-width: 767px) {
+            #floating-qr-code-vcard-qr {
+                left: 50% !important;
+                transform: translateX(-50%);
+                bottom: 90px;
+                right: auto;
+            }
+        }
     </style>
-    <div id="my-vcard-plugin-button">
+    <div id="floating-qr-code-vcard-button">
         <span class="dashicons dashicons-id"></span>
     </div>
-    <div id="my-vcard-plugin-qr">
+    <div id="floating-qr-code-vcard-qr">
         <img src="<?php echo esc_url($qr_code_url); ?>" alt="QR Code">
         <p><?php echo esc_html($qr_text); ?></p>
     </div>
     <script>
-    (function($){
-        $('#my-vcard-plugin-button').on('click', function(){
-            <?php if (wp_is_mobile()) : ?>
-                // Sur mobile, rediriger vers le fichier .vcf
-                window.location.href = '<?php echo esc_url($vcf_url); ?>';
-            <?php else : ?>
-                // Sur desktop, afficher ou masquer le QR code
-                $('#my-vcard-plugin-qr').toggle();
-            <?php endif; ?>
-        });
-    })(jQuery);
+        (function($) {
+            $('#floating-qr-code-vcard-button').on('click', function() {
+                <?php if (wp_is_mobile()) : ?>
+                    // Sur mobile, rediriger vers le fichier .vcf
+                    window.location.href = '<?php echo esc_url($vcf_url); ?>';
+                <?php else : ?>
+                    // Sur desktop, afficher ou masquer le QR code
+                    $('#floating-qr-code-vcard-qr').toggle();
+                <?php endif; ?>
+            });
+        })(jQuery);
     </script>
-    <?php
+<?php
 }
 
 add_action('wp_enqueue_scripts', 'my_vcard_plugin_enqueue_scripts');
 
-function my_vcard_plugin_enqueue_scripts() {
+function my_vcard_plugin_enqueue_scripts()
+{
     wp_enqueue_script('jquery');
 }
 
 // Add this to handle plugin activation
 register_activation_hook(__FILE__, 'my_vcard_plugin_activate');
-function my_vcard_plugin_activate() {
+function my_vcard_plugin_activate()
+{
     // This will force the rewrite rules to be regenerated on activation
     delete_option('my_vcard_plugin_flush_rewrite');
 }
-?> 
+
+// Add translation loading
+add_action('plugins_loaded', 'my_vcard_plugin_load_textdomain');
+function my_vcard_plugin_load_textdomain() {
+    load_plugin_textdomain('floating-qr-code-vcard', false, dirname(plugin_basename(__FILE__)) . '/languages');
+}
+?>
