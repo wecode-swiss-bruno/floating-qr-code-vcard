@@ -265,30 +265,36 @@ function my_vcard_plugin_display_button()
     <style>
         #floating-qr-code-vcard-button {
             position: fixed;
-            <?php echo esc_attr($css_position); ?>z-index: 9999;
+            <?php echo esc_html($css_position); ?>;
+            z-index: 9999;
             cursor: pointer;
-            background-color: #0073aa;
-            width: 50px;
-            height: 50px;
+            background: white;
             border-radius: 50%;
+            padding: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            transition: all 0.3s ease;
+            width: 50px;
+            height: 50px;
         }
 
-        #floating-qr-code-vcard-button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
-        }
-
-        #floating-qr-code-vcard-button .dashicons {
-            font-size: 30px;
+        #floating-qr-code-vcard-button img {
             width: 30px;
             height: 30px;
-            padding: 0;
-            color: #fff;
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            #floating-qr-code-vcard-button {
+                width: 40px;
+                height: 40px;
+            }
+
+            #floating-qr-code-vcard-button img {
+                width: 24px;
+                height: 24px;
+            }
         }
 
         #floating-qr-code-vcard-qr {
@@ -327,7 +333,7 @@ function my_vcard_plugin_display_button()
         }
     </style>
     <div id="floating-qr-code-vcard-button">
-        <span class="dashicons dashicons-id"></span>
+        <img src="<?php echo esc_url($qr_code_url); ?>" alt="QR Code">
     </div>
     <div id="floating-qr-code-vcard-qr">
         <img src="<?php echo esc_url($qr_code_url); ?>" alt="QR Code">
@@ -335,13 +341,17 @@ function my_vcard_plugin_display_button()
     </div>
     <script>
         (function($) {
-            $('#floating-qr-code-vcard-button').on('click', function() {
+            $('#floating-qr-code-vcard-button, #floating-qr-code-vcard-qr').on('click', function() {
                 <?php if (wp_is_mobile()) : ?>
-                    // Sur mobile, rediriger vers le fichier .vcf
-                    window.location.href = '<?php echo esc_url($vcf_url); ?>';
+                    // On mobile, redirect to the .vcf file
+                    window.location.href = '<?php echo esc_url(home_url('/vcard/download/')); ?>';
                 <?php else : ?>
-                    // Sur desktop, afficher ou masquer le QR code
-                    $('#floating-qr-code-vcard-qr').toggle();
+                    // On desktop, toggle QR code visibility and handle click
+                    if ($(this).attr('id') === 'floating-qr-code-vcard-button') {
+                        $('#floating-qr-code-vcard-qr').toggle();
+                    } else if ($(this).attr('id') === 'floating-qr-code-vcard-qr') {
+                        window.location.href = '<?php echo esc_url(home_url('/vcard/download/')); ?>';
+                    }
                 <?php endif; ?>
             });
         })(jQuery);
@@ -366,7 +376,8 @@ function my_vcard_plugin_activate()
 
 // Add translation loading
 add_action('plugins_loaded', 'my_vcard_plugin_load_textdomain');
-function my_vcard_plugin_load_textdomain() {
+function my_vcard_plugin_load_textdomain()
+{
     load_plugin_textdomain('floating-qr-code-vcard', false, dirname(plugin_basename(__FILE__)) . '/languages');
 }
 ?>
