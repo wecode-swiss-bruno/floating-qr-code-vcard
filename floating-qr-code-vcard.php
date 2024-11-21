@@ -51,7 +51,9 @@ function my_vcard_plugin_settings_page()
             'city',
             'job_title',
             'button_position',
-            'qr_text'
+            'qr_text',
+            'button_icon',
+            'button_size'
         ];
 
         foreach ($fields as $field) {
@@ -77,17 +79,26 @@ function my_vcard_plugin_settings_page()
         'city',
         'job_title',
         'button_position',
-        'qr_text'
+        'qr_text',
+        'button_icon',
+        'button_size'
     ];
     $values = [];
     foreach ($fields as $field) {
         $values[$field] = get_option('my_vcard_plugin_' . $field, '');
     }
 
-    // Afficher le formulaire
+    // Get scan count
+    $scan_count = get_option('my_vcard_plugin_scan_count', 0);
 ?>
     <div class="wrap">
         <h1><?php esc_html_e('VCard Settings', 'floating-qr-code-vcard'); ?></h1>
+        
+        <div class="card" style="max-width: 100%; margin-bottom: 20px;">
+            <h2 class="title"><?php esc_html_e('Statistics', 'floating-qr-code-vcard'); ?></h2>
+            <p><?php printf(esc_html__('Total Scans: %d', 'floating-qr-code-vcard'), $scan_count); ?></p>
+        </div>
+        
         <form method="post" action="">
             <?php wp_nonce_field('my_vcard_plugin_settings', 'my_vcard_plugin_nonce'); ?>
             <input type="hidden" name="my_vcard_plugin_hidden_field" value="Y">
@@ -150,6 +161,25 @@ function my_vcard_plugin_settings_page()
                     <th scope="row">Texte du QR code</th>
                     <td>
                         <input type="text" name="qr_text" value="<?php echo esc_attr(get_option('my_vcard_plugin_qr_text', 'Scannez pour enregistrer le contact')); ?>" class="regular-text">
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php _e('Button Icon', 'floating-qr-code-vcard'); ?></th>
+                    <td>
+                        <select name="button_icon">
+                            <option value="qr" <?php selected($values['button_icon'], 'qr'); ?>><?php _e('QR Code', 'floating-qr-code-vcard'); ?></option>
+                            <option value="card" <?php selected($values['button_icon'], 'card'); ?>><?php _e('Contact Card', 'floating-qr-code-vcard'); ?></option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php _e('Button Size', 'floating-qr-code-vcard'); ?></th>
+                    <td>
+                        <select name="button_size">
+                            <option value="small" <?php selected($values['button_size'], 'small'); ?>><?php _e('Small', 'floating-qr-code-vcard'); ?></option>
+                            <option value="medium" <?php selected($values['button_size'], 'medium'); ?>><?php _e('Medium', 'floating-qr-code-vcard'); ?></option>
+                            <option value="large" <?php selected($values['button_size'], 'large'); ?>><?php _e('Large', 'floating-qr-code-vcard'); ?></option>
+                        </select>
                     </td>
                 </tr>
             </table>
@@ -232,6 +262,10 @@ add_action('parse_request', 'my_vcard_plugin_parse_request');
 function my_vcard_plugin_parse_request($wp)
 {
     if (array_key_exists('my_vcard_plugin_action', $wp->query_vars) && $wp->query_vars['my_vcard_plugin_action'] == 'download_vcf') {
+        // Increment scan counter
+        $current_count = get_option('my_vcard_plugin_scan_count', 0);
+        update_option('my_vcard_plugin_scan_count', $current_count + 1);
+        
         header('Content-Type: text/vcard; charset=utf-8');
         header('Content-Disposition: attachment; filename="contact.vcf"');
         echo my_vcard_plugin_generate_vcf();
@@ -253,13 +287,37 @@ function my_vcard_plugin_display_button()
 {
     $position = get_option('my_vcard_plugin_button_position', 'bottom-right');
     $qr_text = get_option('my_vcard_plugin_qr_text', 'Scannez pour enregistrer le contact');
+    $button_icon = get_option('my_vcard_plugin_button_icon', 'card');
+    $button_size = get_option('my_vcard_plugin_button_size', 'medium');
 
     $positions_css = [
         'bottom-left' => 'left: 20px; bottom: 20px;',
         'bottom-center' => 'left: 50%; transform: translateX(-50%); bottom: 20px;',
         'bottom-right' => 'right: 20px; bottom: 20px;',
     ];
+
+    $sizes_css = [
+        'small' => [
+            'button' => 'width: 40px; height: 40px;',
+            'icon' => 'width: 40px; height: 40px;'
+        ],
+        'medium' => [
+            'button' => 'width: 50px; height: 50px;',
+            'icon' => 'width: 50px; height: 50px;'
+        ],
+        'large' => [
+            'button' => 'width: 60px; height: 60px;',
+            'icon' => 'width: 60px; height: 60px;'
+        ]
+    ];
+
     $css_position = isset($positions_css[$position]) ? $positions_css[$position] : $positions_css['bottom-right'];
+    $css_size = isset($sizes_css[$button_size]) ? $sizes_css[$button_size] : $sizes_css['medium'];
+    
+    // Define icon URLs
+    $icon_url = $button_icon == 'qr' 
+        ? esc_url(my_vcard_plugin_get_qr_code_url()) 
+        : plugins_url('assets/images/card-icon.svg', __FILE__);
     $qr_code_url = my_vcard_plugin_get_qr_code_url();
 ?>
     <style>
@@ -270,30 +328,25 @@ function my_vcard_plugin_display_button()
             cursor: pointer;
             background: white;
             border-radius: 50%;
-            padding: 10px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 50px;
-            height: 50px;
+            <?php echo esc_html($css_size['button']); ?>;
         }
 
         #floating-qr-code-vcard-button img {
-            width: 30px;
-            height: 30px;
+            <?php echo esc_html($css_size['icon']); ?>;
             display: block;
         }
 
         @media (max-width: 768px) {
             #floating-qr-code-vcard-button {
-                width: 40px;
-                height: 40px;
+                <?php echo esc_html($css_size['button']); ?>;
             }
 
             #floating-qr-code-vcard-button img {
-                width: 24px;
-                height: 24px;
+                <?php echo esc_html($css_size['icon']); ?>;
             }
         }
 
@@ -333,7 +386,7 @@ function my_vcard_plugin_display_button()
         }
     </style>
     <div id="floating-qr-code-vcard-button">
-        <img src="<?php echo esc_url($qr_code_url); ?>" alt="QR Code">
+        <img src="<?php echo esc_url($icon_url); ?>" alt="QR Code">
     </div>
     <div id="floating-qr-code-vcard-qr">
         <img src="<?php echo esc_url($qr_code_url); ?>" alt="QR Code">
@@ -372,6 +425,9 @@ function my_vcard_plugin_activate()
 {
     // This will force the rewrite rules to be regenerated on activation
     delete_option('my_vcard_plugin_flush_rewrite');
+    
+    // Add scan counter option if it doesn't exist
+    add_option('my_vcard_plugin_scan_count', 0);
 }
 
 // Add translation loading
