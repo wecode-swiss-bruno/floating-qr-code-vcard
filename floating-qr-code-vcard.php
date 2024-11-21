@@ -96,7 +96,7 @@ function my_vcard_plugin_settings_page()
         
         <div class="card" style="max-width: 100%; margin-bottom: 20px;">
             <h2 class="title"><?php esc_html_e('Statistics', 'floating-qr-code-vcard'); ?></h2>
-            <p><?php printf(esc_html__('Total Scans: %d', 'floating-qr-code-vcard'), $scan_count); ?></p>
+            <p><?php /* translators: %d: number of QR code scans */ printf(esc_html__('Total Scans: %d', 'floating-qr-code-vcard'), esc_html($scan_count)); ?></p>
         </div>
         
         <form method="post" action="">
@@ -104,7 +104,7 @@ function my_vcard_plugin_settings_page()
             <input type="hidden" name="my_vcard_plugin_hidden_field" value="Y">
             <table class="form-table">
                 <tr>
-                    <th scope="row"><?php _e('Company', 'floating-qr-code-vcard'); ?></th>
+                    <th scope="row"><?php esc_html_e('Company', 'floating-qr-code-vcard'); ?></th>
                     <td><input type="text" name="company" value="<?php echo esc_attr($values['company']); ?>" class="regular-text"></td>
                 </tr>
                 <tr>
@@ -148,12 +148,12 @@ function my_vcard_plugin_settings_page()
                     <td><input type="text" name="job_title" value="<?php echo esc_attr($values['job_title']); ?>" class="regular-text"></td>
                 </tr>
                 <tr>
-                    <th scope="row"><?php _e('Button Position', 'floating-qr-code-vcard'); ?></th>
+                    <th scope="row"><?php esc_html_e('Button Position', 'floating-qr-code-vcard'); ?></th>
                     <td>
                         <select name="button_position">
-                            <option value="bottom-left" <?php selected($values['button_position'], 'bottom-left'); ?>><?php _e('Bottom Left', 'floating-qr-code-vcard'); ?></option>
-                            <option value="bottom-center" <?php selected($values['button_position'], 'bottom-center'); ?>><?php _e('Bottom Center', 'floating-qr-code-vcard'); ?></option>
-                            <option value="bottom-right" <?php selected($values['button_position'], 'bottom-right'); ?>><?php _e('Bottom Right', 'floating-qr-code-vcard'); ?></option>
+                            <option value="bottom-left" <?php selected($values['button_position'], 'bottom-left'); ?>><?php esc_html_e('Bottom Left', 'floating-qr-code-vcard'); ?></option>
+                            <option value="bottom-center" <?php selected($values['button_position'], 'bottom-center'); ?>><?php esc_html_e('Bottom Center', 'floating-qr-code-vcard'); ?></option>
+                            <option value="bottom-right" <?php selected($values['button_position'], 'bottom-right'); ?>><?php esc_html_e('Bottom Right', 'floating-qr-code-vcard'); ?></option>
                         </select>
                     </td>
                 </tr>
@@ -164,21 +164,21 @@ function my_vcard_plugin_settings_page()
                     </td>
                 </tr>
                 <tr>
-                    <th scope="row"><?php _e('Button Icon', 'floating-qr-code-vcard'); ?></th>
+                    <th scope="row"><?php esc_html_e('Button Icon', 'floating-qr-code-vcard'); ?></th>
                     <td>
                         <select name="button_icon">
-                            <option value="qr" <?php selected($values['button_icon'], 'qr'); ?>><?php _e('QR Code', 'floating-qr-code-vcard'); ?></option>
-                            <option value="card" <?php selected($values['button_icon'], 'card'); ?>><?php _e('Contact Card', 'floating-qr-code-vcard'); ?></option>
+                            <option value="qr" <?php selected($values['button_icon'], 'qr'); ?>><?php esc_html_e('QR Code', 'floating-qr-code-vcard'); ?></option>
+                            <option value="card" <?php selected($values['button_icon'], 'card'); ?>><?php esc_html_e('Contact Card', 'floating-qr-code-vcard'); ?></option>
                         </select>
                     </td>
                 </tr>
                 <tr>
-                    <th scope="row"><?php _e('Button Size', 'floating-qr-code-vcard'); ?></th>
+                    <th scope="row"><?php esc_html_e('Button Size', 'floating-qr-code-vcard'); ?></th>
                     <td>
                         <select name="button_size">
-                            <option value="small" <?php selected($values['button_size'], 'small'); ?>><?php _e('Small', 'floating-qr-code-vcard'); ?></option>
-                            <option value="medium" <?php selected($values['button_size'], 'medium'); ?>><?php _e('Medium', 'floating-qr-code-vcard'); ?></option>
-                            <option value="large" <?php selected($values['button_size'], 'large'); ?>><?php _e('Large', 'floating-qr-code-vcard'); ?></option>
+                            <option value="small" <?php selected($values['button_size'], 'small'); ?>><?php esc_html_e('Small', 'floating-qr-code-vcard'); ?></option>
+                            <option value="medium" <?php selected($values['button_size'], 'medium'); ?>><?php esc_html_e('Medium', 'floating-qr-code-vcard'); ?></option>
+                            <option value="large" <?php selected($values['button_size'], 'large'); ?>><?php esc_html_e('Large', 'floating-qr-code-vcard'); ?></option>
                         </select>
                     </td>
                 </tr>
@@ -268,7 +268,7 @@ function my_vcard_plugin_parse_request($wp)
         
         header('Content-Type: text/vcard; charset=utf-8');
         header('Content-Disposition: attachment; filename="contact.vcf"');
-        echo my_vcard_plugin_generate_vcf();
+        echo wp_kses_post(my_vcard_plugin_generate_vcf());
         exit();
     }
 }
