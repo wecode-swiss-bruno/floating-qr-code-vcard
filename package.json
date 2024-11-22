@@ -1,6 +1,6 @@
 {
   "name": "floating-qr-code-vcard",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "WordPress plugin for floating QR code vCard",
   "scripts": {
     "build": "node build.js"
@@ -8,4 +8,4 @@
   "devDependencies": {
     "archiver": "^5.3.1"
   }
-} 
+}
